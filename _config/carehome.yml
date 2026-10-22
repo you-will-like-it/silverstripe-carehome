@@ -1,0 +1,69 @@
+---
+Name: carehome
+After:
+  - '#coreconfig'
+---
+SilverStripe\Security\Member:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\MemberCareExtension
+
+# --- Services (constructor injection) -------------------------------------
+SilverStripe\Core\Injector\Injector:
+  YouWillLikeIT\CareHome\Pdf\PdfRendererInterface:
+    class: YouWillLikeIT\CareHome\Pdf\MpdfRenderer
+  YouWillLikeIT\CareHome\Service\AuditLogger:
+    constructor:
+      - '%$YouWillLikeIT\CareHome\Service\AuditContext'
+  YouWillLikeIT\CareHome\Service\TaskGenerator:
+    constructor:
+      - '%$YouWillLikeIT\CareHome\Service\Clock'
+  YouWillLikeIT\CareHome\Service\BedAssignmentService:
+    constructor:
+      - '%$YouWillLikeIT\CareHome\Service\Clock'
+  YouWillLikeIT\CareHome\Service\PatientLifecycleService:
+    constructor:
+      - '%$YouWillLikeIT\CareHome\Service\BedAssignmentService'
+      - '%$YouWillLikeIT\CareHome\Service\TaskGenerator'
+      - '%$YouWillLikeIT\CareHome\Service\Clock'
+  YouWillLikeIT\CareHome\Service\MealSelectionService:
+    constructor:
+      - '%$YouWillLikeIT\CareHome\Service\Clock'
+  YouWillLikeIT\CareHome\Service\TaskStatusService:
+    constructor:
+      - '%$YouWillLikeIT\CareHome\Service\Clock'
+      - '%$YouWillLikeIT\CareHome\Service\ZoneScope'
+  YouWillLikeIT\CareHome\Service\ShiftResolver:
+    constructor:
+      - '%$YouWillLikeIT\CareHome\Service\Clock'
+  YouWillLikeIT\CareHome\Service\KitchenSummaryService:
+    constructor:
+      - '%$YouWillLikeIT\CareHome\Service\Clock'
+  YouWillLikeIT\CareHome\Service\MedicalReportService:
+    constructor:
+      - '%$YouWillLikeIT\CareHome\Service\Clock'
+      - '%$YouWillLikeIT\CareHome\Pdf\PdfRendererInterface'
+  YouWillLikeIT\CareHome\Security\PortalAuthenticator:
+    constructor:
+      - '%$YouWillLikeIT\CareHome\Security\PinHasher'
+      - '%$YouWillLikeIT\CareHome\Service\AuditLogger'
+
+# --- Defaults you will typically override in app/_config ------------------
+# YouWillLikeIT\CareHome\Service\Clock:
+#   timezone: 'Europe/Sarajevo'
+# YouWillLikeIT\CareHome\Service\QrCodeService:
+#   portal_base_url: 'https://dom.local'
+# YouWillLikeIT\CareHome\Service\MealSelectionService:
+#   selection_cutoff: '18:00'
+# YouWillLikeIT\CareHome\Service\MedicalReportService:
+#   facility_name: 'Dom za starije „Primjer"'
+#   facility_address: 'Ulica 1, 71000 Sarajevo'
+# YouWillLikeIT\CareHome\Model\Patient\Patient:
+#   validate_jmbg: false          # DACH installs
+# Two shifts instead of three (null removes a default shift):
+# YouWillLikeIT\CareHome\Service\ShiftResolver:
+#   shifts:
+#     Morning: null
+#     Afternoon: null
+#     Night: null
+#     Day:   { label: 'Dnevna', start: '07:00', end: '19:00' }
+#     Night2: { label: 'Noćna', start: '19:00', end: '07:00' }

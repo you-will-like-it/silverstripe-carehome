@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+/* Tailwind scans the module's SS templates for class names */
+@source "../../templates";
+
+@theme {
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-brand-50: oklch(0.97 0.02 190);
+  --color-brand-100: oklch(0.93 0.04 190);
+  --color-brand-600: oklch(0.52 0.1 190);
+  --color-brand-700: oklch(0.45 0.09 190);
+  --color-brand-800: oklch(0.38 0.07 190);
+  --color-brand-900: oklch(0.3 0.05 190);
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-slate-100 text-slate-900 antialiased;
+  }
+  [x-cloak] {
+    display: none !important;
+  }
+}
+
+@utility ch-card {
+  @apply rounded-2xl bg-white shadow-sm ring-1 ring-slate-200;
+}
+@utility ch-btn {
+  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-base font-semibold transition active:scale-[0.98] focus:outline-none focus-visible:ring-4 disabled:cursor-not-allowed;
+}
+@utility ch-btn-primary {
+  @apply ch-btn bg-brand-700 text-white hover:bg-brand-800 focus-visible:ring-brand-100;
+}
+@utility ch-btn-done {
+  @apply ch-btn bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-200;
+}
+@utility ch-btn-skip {
+  @apply ch-btn bg-rose-600 text-white hover:bg-rose-700 focus-visible:ring-rose-200;
+}
+@utility ch-btn-ghost {
+  @apply ch-btn bg-white text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50 focus-visible:ring-slate-200;
+}
+@utility ch-input {
+  @apply block w-full rounded-xl border-0 bg-white px-4 py-3 text-base text-slate-900 ring-1 ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-600 focus:outline-none;
+}
+@utility ch-label {
+  @apply mb-1 block text-sm font-medium text-slate-700;
+}
+@utility ch-badge {
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+}
+@utility ch-key {
+  @apply flex h-16 items-center justify-center rounded-2xl bg-white text-2xl font-semibold text-slate-800 shadow-sm ring-1 ring-slate-200 active:bg-slate-100;
+}
+
+@media print {
+  .ch-no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+}

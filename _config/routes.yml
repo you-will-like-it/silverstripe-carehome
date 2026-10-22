@@ -1,0 +1,12 @@
+---
+Name: carehome-routes
+After:
+  - '#rootroutes'
+  - '#coreroutes'
+---
+SilverStripe\Control\Director:
+  rules:
+    'portal': YouWillLikeIT\CareHome\Control\Portal\PortalController
+    'kuhinja': YouWillLikeIT\CareHome\Control\Portal\KitchenController
+    'carehome-report': YouWillLikeIT\CareHome\Control\Admin\MedicalReportController
+    'carehome-qr': YouWillLikeIT\CareHome\Control\Admin\QrPrintController

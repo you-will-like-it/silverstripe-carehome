@@ -1,0 +1,58 @@
+---
+Name: carehome-audit
+---
+# Field-level audit trail. Add the extension to any further class you want covered.
+SilverStripe\Security\Member:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+SilverStripe\Security\Group:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+SilverStripe\Security\Permission:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+YouWillLikeIT\CareHome\Model\Facility\FacilityZone:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+YouWillLikeIT\CareHome\Model\Facility\FacilityRoom:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+YouWillLikeIT\CareHome\Model\Facility\FacilityBed:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+YouWillLikeIT\CareHome\Model\Facility\MemberZoneAssignment:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+YouWillLikeIT\CareHome\Model\Patient\Patient:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+YouWillLikeIT\CareHome\Model\Patient\DietaryTag:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+YouWillLikeIT\CareHome\Model\Task\TaskTemplate:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+YouWillLikeIT\CareHome\Model\Task\PatientGlobalTask:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+YouWillLikeIT\CareHome\Model\Task\DailyTask:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+YouWillLikeIT\CareHome\Model\Task\VitalParameterDefinition:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+YouWillLikeIT\CareHome\Model\Task\VitalReading:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+YouWillLikeIT\CareHome\Model\Note\PatientNote:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+YouWillLikeIT\CareHome\Model\Note\ShiftHandoverLog:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+YouWillLikeIT\CareHome\Model\Kitchen\WeeklyMenuItem:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension
+YouWillLikeIT\CareHome\Model\Kitchen\PatientMealSelection:
+  extensions:
+    - YouWillLikeIT\CareHome\Extension\AuditableExtension

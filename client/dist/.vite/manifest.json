@@ -1,0 +1,20 @@
+{
+  "client/src/portal.js": {
+    "file": "assets/portal-BYd_tQ9f.js",
+    "name": "portal",
+    "src": "client/src/portal.js",
+    "isEntry": true,
+    "dynamicImports": [
+      "node_modules/html5-qrcode/esm/index.js"
+    ],
+    "css": [
+      "assets/portal-CcIZ-_8v.css"
+    ]
+  },
+  "node_modules/html5-qrcode/esm/index.js": {
+    "file": "assets/index-C8ZovHKt.js",
+    "name": "index",
+    "src": "node_modules/html5-qrcode/esm/index.js",
+    "isDynamicEntry": true
+  }
+}
