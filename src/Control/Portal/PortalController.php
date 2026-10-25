@@ -620,6 +620,8 @@ class PortalController extends AbstractPortalController
             ])
             ->exclude('ID', (int) $worker->ID)
             ->sort(['FirstName' => 'ASC', 'Surname' => 'ASC']);
+        // e.g. the roster add-on narrows this to the workers of the next shift
+        $this->extend('updateHandoverReceivers', $members, $worker);
 
         $list = ArrayList::create();
         foreach ($members as $member) {

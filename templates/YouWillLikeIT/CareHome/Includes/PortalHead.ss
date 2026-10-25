@@ -18,6 +18,9 @@
             <span><%t CareHomePortal.APP "Dom za njegu" %></span>
         </a>
         <span class="ml-auto truncate text-sm text-brand-100">$Worker.FirstName $Worker.Surname</span>
+        <% loop $PortalNavLinks %>
+        <a href="$Link" class="rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/20">$Title<% if $Badge %> <span class="ch-badge bg-rose-600 text-white">$Badge</span><% end_if %></a>
+        <% end_loop %>
         <% if not $IsCmsSession %>
         <form method="post" action="$Link('logout')">
             <input type="hidden" name="$SecurityTokenName" value="$SecurityTokenValue">

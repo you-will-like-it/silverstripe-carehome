@@ -11,6 +11,8 @@ use SilverStripe\Control\HTTPResponse_Exception;
 use SilverStripe\Control\Middleware\HTTPCacheControlMiddleware;
 use SilverStripe\i18n\i18n;
 use SilverStripe\Model\ArrayData;
+use SilverStripe\Model\List\ArrayList;
+use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\FieldType\DBHTMLText;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\SecurityToken;
@@ -130,6 +132,30 @@ abstract class AbstractPortalController extends Controller
     public function Worker(): ?Member
     {
         return $this->currentWorker();
+    }
+
+    /**
+     * Extra header links contributed by add-on modules (e.g. "Moj raspored").
+     * Extension hook: updatePortalNavLinks(ArrayList $links) – push ArrayData{Title, Link, Badge?}.
+     */
+    public function PortalNavLinks(): ArrayList
+    {
+        $links = ArrayList::create();
+        $this->extend('updatePortalNavLinks', $links);
+
+        return $links;
+    }
+
+    /**
+     * Named template slot filled by add-on modules.
+     * Extension hook: updatePortalSlot(string $slot, array &$parts) – append HTML fragments.
+     */
+    public function PortalSlot(string $slot): DBField
+    {
+        $parts = [];
+        $this->extend('updatePortalSlot', $slot, $parts);
+
+        return DBField::create_field('HTMLFragment', implode("\n", array_map('strval', $parts)));
     }
 
     /**

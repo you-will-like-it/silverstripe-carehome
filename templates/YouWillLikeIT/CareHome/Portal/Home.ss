@@ -7,6 +7,8 @@
     <a href="$Link('handover')" class="ch-btn-ghost min-h-10 text-sm"><%t CareHomePortal.HANDOVER "Primopredaja" %></a>
 </div>
 
+$PortalSlot('home-top')
+
 <% if $Zones %>
 <div class="mb-4 flex flex-wrap gap-2">
     <% loop $Zones %>
