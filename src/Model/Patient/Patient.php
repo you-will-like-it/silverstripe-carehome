@@ -92,6 +92,11 @@ class Patient extends DataObject
     /** Upload folder for resident photos (files stay unpublished = protected). */
     private static string $photo_folder = 'carehome-patients';
 
+    /** DB-level Enum/Boolean defaults are not applied to new PHP objects in SS6; set them explicitly. */
+    private static array $defaults = [
+        'Status' => self::STATUS_ACTIVE,
+    ];
+
     private static array $db = [
         'FirstName' => 'Varchar(100)',
         'LastName' => 'Varchar(100)',

@@ -36,6 +36,11 @@ class PatientNote extends DataObject
 
     private static string $table_name = 'CareHome_PatientNote';
 
+    /** DB-level Enum/Boolean defaults are not applied to new PHP objects in SS6; set them explicitly. */
+    private static array $defaults = [
+        'Severity' => self::SEVERITY_INFO,
+    ];
+
     private static array $db = [
         'NoteText' => 'Text',
         'Severity' => "Enum('Info,Important,Critical','Info')",

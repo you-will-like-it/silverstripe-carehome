@@ -53,6 +53,12 @@ class MemberCareExtension extends Extension
         'PortalEnabled' => 'Boolean(1)',
     ];
 
+    /** DB-level Enum/Boolean defaults are not applied to new PHP objects in SS6; set them explicitly. */
+    private static array $defaults = [
+        'WorkerRole' => self::ROLE_NONE,
+        'PortalEnabled' => true,
+    ];
+
     private static array $many_many = [
         'AssignedZones' => [
             'through' => MemberZoneAssignment::class,
@@ -135,7 +141,9 @@ class MemberCareExtension extends Extension
         $owner = $this->getOwner();
         $pin = trim((string) $owner->getField('NewWorkerPin'));
 
-        if (!array_key_exists((string) $owner->WorkerRole, self::roleOptions())) {
+        // empty = not a care worker (e.g. default admin created during db:build)
+        $role = (string) $owner->WorkerRole;
+        if ($role !== '' && !array_key_exists($role, self::roleOptions())) {
             $result->addFieldError('WorkerRole', _t(__CLASS__ . '.INVALID_ROLE', 'Nepoznata uloga.'));
         }
 
@@ -174,6 +182,9 @@ class MemberCareExtension extends Extension
     protected function onBeforeWrite(): void
     {
         $owner = $this->getOwner();
+        if ((string) $owner->WorkerRole === '') {
+            $owner->WorkerRole = self::ROLE_NONE;
+        }
         $pin = trim((string) $owner->getField('NewWorkerPin'));
 
         if ($pin !== '') {

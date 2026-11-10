@@ -31,6 +31,11 @@ class WeeklyMenuItem extends DataObject
 
     private static string $table_name = 'CareHome_WeeklyMenuItem';
 
+    /** DB-level Enum/Boolean defaults are not applied to new PHP objects in SS6; set them explicitly. */
+    private static array $defaults = [
+        'MealType' => self::MEAL_LUNCH,
+    ];
+
     private static array $db = [
         'MenuDate' => 'Date',
         'MealType' => "Enum('Lunch,Dinner','Lunch')",

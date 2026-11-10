@@ -36,6 +36,12 @@ class VitalParameterDefinition extends DataObject
 
     private static string $table_name = 'CareHome_VitalParameterDefinition';
 
+    /** DB-level Enum/Boolean defaults are not applied to new PHP objects in SS6; set them explicitly. */
+    private static array $defaults = [
+        'ValueType' => self::TYPE_DECIMAL,
+        'IsActive' => true,
+    ];
+
     private static array $db = [
         'Title' => 'Varchar(100)',
         'Code' => 'Varchar(30)',

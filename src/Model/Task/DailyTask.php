@@ -54,6 +54,11 @@ class DailyTask extends DataObject
 
     private static string $table_name = 'CareHome_DailyTask';
 
+    /** DB-level Enum/Boolean defaults are not applied to new PHP objects in SS6; set them explicitly. */
+    private static array $defaults = [
+        'Status' => self::STATUS_OPEN,
+    ];
+
     private static array $db = [
         'DueDate' => 'Date',
         'DueTime' => 'Time',

@@ -53,6 +53,12 @@ class TaskTemplate extends DataObject implements HiddenClass
         'Transdermal', 'Inhalation', 'Topical', 'Ophthalmic', 'Rectal', 'Other',
     ];
 
+    /** DB-level Enum/Boolean defaults are not applied to new PHP objects in SS6; set them explicitly. */
+    private static array $defaults = [
+        'Category' => self::CATEGORY_OTHER,
+        'IsActive' => true,
+    ];
+
     private static array $db = [
         'Title' => 'Varchar(200)',
         'Category' => "Enum('Therapy,Vitals,Hygiene,Nutrition,Other','Other')",
