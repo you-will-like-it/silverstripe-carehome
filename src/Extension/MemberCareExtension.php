@@ -116,7 +116,10 @@ class MemberCareExtension extends Extension
 
         $fields->addFieldsToTab($tab, [
             DropdownField::create('WorkerRole', _t(__CLASS__ . '.ROLE', 'Uloga u domu'), self::roleOptions())
-                ->setDescription(_t(__CLASS__ . '.ROLE_DESC', 'Uloga automatski određuje grupu i prava.')),
+                ->setDescription(_t(
+                    __CLASS__ . '.ROLE_DESC',
+                    'Promjena uloge postavlja odgovarajuću grupu. Pristup portalu i kuhinji određuju grupe (prava).'
+                )),
             CheckboxField::create('PortalEnabled', _t(__CLASS__ . '.PORTAL_ENABLED', 'PIN prijava dozvoljena')),
             ReadonlyField::create('PinStatus', _t(__CLASS__ . '.PIN_STATUS', 'PIN'), $owner->WorkerPinLookup
                 ? _t(__CLASS__ . '.PIN_SET', 'postavljen')
@@ -277,9 +280,14 @@ class MemberCareExtension extends Extension
             }
         }
 
-        // members created while the groups did not exist yet (e.g. before the first db:build)
+        // members created while the groups did not exist yet (e.g. before the first db:build):
+        // only members in none of the module groups, so manual group changes are respected
+        $moduleGroupIds = array_map('intval', Group::get()->filter('Code', array_values(self::roleGroups()))->column('ID'));
         $synced = 0;
         foreach (Member::get()->filter('WorkerRole', array_keys(self::roleGroups())) as $member) {
+            if ($member->Groups()->filter('ID', $moduleGroupIds ?: [0])->exists()) {
+                continue;
+            }
             $member->syncRoleGroup();
             $synced++;
         }
@@ -288,12 +296,14 @@ class MemberCareExtension extends Extension
         }
     }
 
+    /**
+     * PIN login allowed at all. Which area (portal / kitchen) is decided only by permissions,
+     * i.e. group membership; WorkerRole is a convenience that assigns the matching group.
+     */
     public function isPortalWorker(): bool
     {
         $owner = $this->getOwner();
 
-        return (bool) $owner->PortalEnabled
-            && $owner->WorkerPinLookup
-            && $owner->WorkerRole !== self::ROLE_NONE;
+        return (bool) $owner->PortalEnabled && (bool) $owner->WorkerPinLookup;
     }
 }

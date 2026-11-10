@@ -126,18 +126,25 @@ class KitchenController extends AbstractPortalController
     public function login(HTTPRequest $request): HTTPResponse
     {
         $this->assertPostWithToken($request, $this->Link());
-        $result = PortalAuthenticator::singleton()->attempt($request, (string) $request->postVar('pin'), $this->permissionCode());
+        $result = PortalAuthenticator::singleton()->attempt(
+            $request,
+            (string) $request->postVar('pin'),
+            [$this->permissionCode(), CareHomePermissions::PORTAL]
+        );
         if ($result['error']) {
             $this->flash('error', $result['error']);
         }
 
-        return $this->redirect($this->Link());
+        // care worker PIN entered here: continue in the worker portal
+        return $this->redirect($result['area'] === CareHomePermissions::PORTAL
+            ? PortalController::singleton()->Link()
+            : $this->Link());
     }
 
     public function logout(HTTPRequest $request): HTTPResponse
     {
         $this->assertPostWithToken($request, $this->Link());
-        PortalAuthenticator::singleton()->logout($request, parent::currentWorker());
+        PortalAuthenticator::singleton()->logout($request, parent::currentWorker(), $this->permissionCode());
 
         return $this->redirect($this->Link());
     }

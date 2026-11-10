@@ -24,7 +24,8 @@ class PortalAuthenticator
     use Injectable;
     use Configurable;
 
-    private const string SESSION_KEY = 'CareHomePortal';
+    /** One session slot per area (portal / kitchen), so both can be used in the same browser. */
+    private const string SESSION_PREFIX = 'CareHomePortal_';
 
     /** Failed attempts allowed per IP within lockout_seconds. */
     private static int $max_attempts = 8;
@@ -44,15 +45,20 @@ class PortalAuthenticator
     }
 
     /**
-     * @return array{member:?Member, error:?string}
+     * One PIN login for all PIN areas: $permissionCodes in priority order (the area the user is on first).
+     * On success the worker is signed into every listed area they have access to; 'area' is the first match,
+     * so the caller can redirect there (e.g. a kitchen PIN entered on /portal lands on /kuhinja).
+     *
+     * @param list<string> $permissionCodes
+     * @return array{member:?Member, error:?string, area:?string}
      */
-    public function attempt(HTTPRequest $request, string $pin, string $permissionCode): array
+    public function attempt(HTTPRequest $request, string $pin, array $permissionCodes): array
     {
         $limiter = $this->limiter($request);
         if (!$limiter->canAccess()) {
             $minutes = (int) ceil($limiter->getTimeToReset() / 60);
 
-            return ['member' => null, 'error' => _t(
+            return ['member' => null, 'area' => null, 'error' => _t(
                 __CLASS__ . '.LOCKED',
                 'Previše pokušaja. Pokušajte ponovo za {minutes} min.',
                 ['minutes' => max(1, $minutes)]
@@ -66,13 +72,16 @@ class PortalAuthenticator
             $member = Member::get()->filter('WorkerPinLookup', $this->hasher->lookup($pin))->first();
         }
 
+        $granted = $member
+            ? array_values(array_filter($permissionCodes, static fn (string $code): bool => CareHomePermissions::check($code, $member)))
+            : [];
+
         // the user only sees "wrong PIN"; the real reason goes to the audit log
         $reason = match (true) {
             !$member => 'unknown_pin',
             !$member->PortalEnabled => 'portal_disabled',
-            (string) $member->WorkerRole === '' || $member->WorkerRole === 'None' => 'no_role',
             $member->isLockedOut() => 'locked_out',
-            !CareHomePermissions::check($permissionCode, $member) => 'missing_permission',
+            $granted === [] => 'missing_permission',
             default => null,
         };
         if ($reason !== null) {
@@ -81,30 +90,32 @@ class PortalAuthenticator
                 AuditLogEntry::ACTION_LOGIN_FAILED,
                 _t(__CLASS__ . '.AUDIT_FAILED', 'Neuspjela PIN prijava'),
                 $member,
-                ['permission' => $permissionCode, 'reason' => $reason]
+                ['permissions' => $permissionCodes, 'reason' => $reason]
             );
 
-            return ['member' => null, 'error' => _t(__CLASS__ . '.INVALID', 'Pogrešan PIN.')];
+            return ['member' => null, 'area' => null, 'error' => _t(__CLASS__ . '.INVALID', 'Pogrešan PIN.')];
         }
 
         $limiter->clearAttempts();
         $session = $request->getSession();
         $session->regenerateSessionId();
         $now = time();
-        $session->set(self::SESSION_KEY, [
-            'memberID' => (int) $member->ID,
-            'loginAt' => $now,
-            'lastSeen' => $now,
-        ]);
+        foreach ($granted as $code) {
+            $session->set(self::sessionKey($code), [
+                'memberID' => (int) $member->ID,
+                'loginAt' => $now,
+                'lastSeen' => $now,
+            ]);
+        }
 
         $this->auditLogger->logEvent(
             AuditLogEntry::ACTION_LOGIN,
             _t(__CLASS__ . '.AUDIT_LOGIN', 'PIN prijava'),
             $member,
-            ['permission' => $permissionCode]
+            ['permissions' => $granted]
         );
 
-        return ['member' => $member, 'error' => null];
+        return ['member' => $member, 'error' => null, 'area' => $granted[0]];
     }
 
     /**
@@ -113,7 +124,7 @@ class PortalAuthenticator
     public function currentWorker(HTTPRequest $request, string $permissionCode): ?Member
     {
         $session = $request->getSession();
-        $data = $session->get(self::SESSION_KEY);
+        $data = $session->get(self::sessionKey($permissionCode));
         if (!is_array($data) || empty($data['memberID'])) {
             return null;
         }
@@ -122,27 +133,27 @@ class PortalAuthenticator
         $idle = (int) static::config()->get('idle_timeout');
         $lifetime = (int) static::config()->get('absolute_lifetime');
         if ($now - (int) ($data['lastSeen'] ?? 0) > $idle || $now - (int) ($data['loginAt'] ?? 0) > $lifetime) {
-            $session->clear(self::SESSION_KEY);
+            $session->clear(self::sessionKey($permissionCode));
 
             return null;
         }
 
         /** @var Member|null $member */
         $member = Member::get()->byID((int) $data['memberID']);
-        // PIN removed, portal disabled or role changed after login → session is void
+        // PIN removed, PIN login disabled or access to this area revoked after login → session is void
         if (!$member || !$member->isPortalWorker() || !CareHomePermissions::check($permissionCode, $member)) {
-            $session->clear(self::SESSION_KEY);
+            $session->clear(self::sessionKey($permissionCode));
 
             return null;
         }
 
         $data['lastSeen'] = $now;
-        $session->set(self::SESSION_KEY, $data);
+        $session->set(self::sessionKey($permissionCode), $data);
 
         return $member;
     }
 
-    public function logout(HTTPRequest $request, ?Member $member): void
+    public function logout(HTTPRequest $request, ?Member $member, string $permissionCode): void
     {
         if ($member) {
             $this->auditLogger->logEvent(
@@ -152,8 +163,16 @@ class PortalAuthenticator
             );
         }
         $session = $request->getSession();
-        $session->clear(self::SESSION_KEY);
+        // sign out of every PIN area (shared tablets)
+        foreach ([CareHomePermissions::PORTAL, CareHomePermissions::KITCHEN, $permissionCode] as $code) {
+            $session->clear(self::sessionKey($code));
+        }
         $session->regenerateSessionId();
+    }
+
+    private static function sessionKey(string $permissionCode): string
+    {
+        return self::SESSION_PREFIX . $permissionCode;
     }
 
     private function limiter(HTTPRequest $request): RateLimiter

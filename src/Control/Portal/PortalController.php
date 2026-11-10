@@ -19,8 +19,8 @@ use SilverStripe\ORM\FieldType\DBField;
 use SilverStripe\ORM\FieldType\DBHTMLText;
 use SilverStripe\ORM\Queries\SQLSelect;
 use SilverStripe\Security\Member;
+use SilverStripe\Security\Permission;
 use Throwable;
-use YouWillLikeIT\CareHome\Extension\MemberCareExtension;
 use YouWillLikeIT\CareHome\Model\Facility\FacilityBed;
 use YouWillLikeIT\CareHome\Model\Kitchen\WeeklyMenuItem;
 use YouWillLikeIT\CareHome\Model\Note\PatientNote;
@@ -120,19 +120,22 @@ class PortalController extends AbstractPortalController
         $result = PortalAuthenticator::singleton()->attempt(
             $request,
             (string) $request->postVar('pin'),
-            $this->permissionCode()
+            [$this->permissionCode(), CareHomePermissions::KITCHEN]
         );
         if ($result['error']) {
             $this->flash('error', $result['error']);
         }
 
-        return $this->redirect($this->Link());
+        // kitchen-only PIN entered here: continue in the kitchen view
+        return $this->redirect($result['area'] === CareHomePermissions::KITCHEN
+            ? KitchenController::singleton()->Link()
+            : $this->Link());
     }
 
     public function logout(HTTPRequest $request): HTTPResponse
     {
         $this->assertPostWithToken($request, $this->Link());
-        PortalAuthenticator::singleton()->logout($request, $this->currentWorker());
+        PortalAuthenticator::singleton()->logout($request, $this->currentWorker(), $this->permissionCode());
 
         return $this->redirect($this->Link());
     }
@@ -613,11 +616,9 @@ class PortalController extends AbstractPortalController
 
     private function receiverOptions(Member $worker): ArrayList
     {
+        $portalIds = array_map('intval', Permission::get_members_by_permission(CareHomePermissions::PORTAL)->column('ID'));
         $members = Member::get()
-            ->filter([
-                'WorkerRole' => [MemberCareExtension::ROLE_CAREWORKER, MemberCareExtension::ROLE_ADMIN],
-                'PortalEnabled' => true,
-            ])
+            ->filter(['ID' => $portalIds ?: [0], 'PortalEnabled' => true])
             ->exclude('ID', (int) $worker->ID)
             ->sort(['FirstName' => 'ASC', 'Surname' => 'ASC']);
         // e.g. the roster add-on narrows this to the workers of the next shift
