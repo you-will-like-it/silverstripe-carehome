@@ -14,6 +14,7 @@ use SilverStripe\Forms\ListboxField;
 use SilverStripe\Forms\PasswordField;
 use SilverStripe\Forms\ReadonlyField;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\DB;
 use SilverStripe\ORM\HasManyList;
 use SilverStripe\ORM\ManyManyThroughList;
 use SilverStripe\Security\Group;
@@ -201,28 +202,38 @@ class MemberCareExtension extends Extension
     protected function onAfterWrite(): void
     {
         $owner = $this->getOwner();
-        if (!$owner->isChanged('WorkerRole', DataObject::CHANGE_VALUE)) {
-            return;
+        if ($owner->isChanged('WorkerRole', DataObject::CHANGE_VALUE)) {
+            $this->syncRoleGroup();
         }
+    }
 
-        $target = self::roleGroups()[$owner->WorkerRole] ?? null;
+    /**
+     * Puts the member into exactly the module group matching WorkerRole (other module groups removed).
+     * Groups that do not exist yet are skipped; onRequireDefaultRecords() re-syncs everybody.
+     */
+    public function syncRoleGroup(): void
+    {
+        $owner = $this->getOwner();
+        $target = self::roleGroups()[(string) $owner->WorkerRole] ?? null;
         foreach (self::roleGroups() as $code) {
             $group = Group::get()->filter('Code', $code)->first();
             if (!$group) {
                 continue;
             }
-            if ($code === $target) {
+            $isMember = $owner->Groups()->filter('ID', (int) $group->ID)->exists();
+            if ($code === $target && !$isMember) {
                 $owner->Groups()->add($group);
-            } else {
+            } elseif ($code !== $target && $isMember) {
                 $owner->Groups()->remove($group);
             }
         }
     }
 
     /**
-     * Creates the three module groups with their permissions (idempotent).
+     * db:build hook (SS6 name: onRequireDefaultRecords). Creates the three module groups with
+     * their permissions and syncs group membership of all members with a role (idempotent).
      */
-    protected function requireDefaultRecords(): void
+    protected function onRequireDefaultRecords(): void
     {
         $definitions = [
             CareHomePermissions::GROUP_ADMINS => [
@@ -264,6 +275,16 @@ class MemberCareExtension extends Extension
                     Permission::grant($group->ID, $permission);
                 }
             }
+        }
+
+        // members created while the groups did not exist yet (e.g. before the first db:build)
+        $synced = 0;
+        foreach (Member::get()->filter('WorkerRole', array_keys(self::roleGroups())) as $member) {
+            $member->syncRoleGroup();
+            $synced++;
+        }
+        if ($synced > 0) {
+            DB::alteration_message("CareHome: role groups synced for $synced members", 'changed');
         }
     }
 

@@ -66,17 +66,22 @@ class PortalAuthenticator
             $member = Member::get()->filter('WorkerPinLookup', $this->hasher->lookup($pin))->first();
         }
 
-        if (!$member
-            || !$member->isPortalWorker()
-            || $member->isLockedOut()
-            || !CareHomePermissions::check($permissionCode, $member)
-        ) {
+        // the user only sees "wrong PIN"; the real reason goes to the audit log
+        $reason = match (true) {
+            !$member => 'unknown_pin',
+            !$member->PortalEnabled => 'portal_disabled',
+            (string) $member->WorkerRole === '' || $member->WorkerRole === 'None' => 'no_role',
+            $member->isLockedOut() => 'locked_out',
+            !CareHomePermissions::check($permissionCode, $member) => 'missing_permission',
+            default => null,
+        };
+        if ($reason !== null) {
             $limiter->hit();
             $this->auditLogger->logEvent(
                 AuditLogEntry::ACTION_LOGIN_FAILED,
                 _t(__CLASS__ . '.AUDIT_FAILED', 'Neuspjela PIN prijava'),
-                null,
-                ['permission' => $permissionCode, 'knownPin' => $member !== null]
+                $member,
+                ['permission' => $permissionCode, 'reason' => $reason]
             );
 
             return ['member' => null, 'error' => _t(__CLASS__ . '.INVALID', 'Pogrešan PIN.')];
