@@ -42,6 +42,9 @@ SilverStripe\Core\Injector\Injector:
     constructor:
       - '%$YouWillLikeIT\CareHome\Service\Clock'
       - '%$YouWillLikeIT\CareHome\Pdf\PdfRendererInterface'
+  YouWillLikeIT\CareHome\Dev\DemoSeeder:
+    constructor:
+      - '%$YouWillLikeIT\CareHome\Service\Clock'
   YouWillLikeIT\CareHome\Security\PortalAuthenticator:
     constructor:
       - '%$YouWillLikeIT\CareHome\Security\PinHasher'

@@ -41,6 +41,39 @@ Cron služi samo da se prozor od 7 dana pomjera naprijed. Sve izmjene šablona, 
 
 Baza: MySQL/MariaDB (ili PostgreSQL). Evidencija zadataka koristi `SELECT … FOR UPDATE`.
 
+## Demo podaci za prezentaciju
+
+```bash
+vendor/bin/sake tasks:carehome-seed-demo                        # 30 dana unaprijed, 14 unazad
+vendor/bin/sake tasks:carehome-seed-demo --future=30 --history=14
+vendor/bin/sake tasks:carehome-seed-demo --purge                # samo ukloni demo podatke
+```
+
+Svako pokretanje prvo briše prethodne demo podatke, pa ih ponovo generiše u odnosu na današnji datum. Briše se samo ono što je seed kreirao (registar `CareHome_DemoSeedRecord`), a stvarni podaci se ne diraju. U `live` okruženju task odbija rad bez `--force`.
+
+Seed kreira:
+
+- 2 zgrade, 3 sprata, 10 soba i 19 kreveta;
+- 15 štićenika (jedan privremeno odsutan, jedan otpušten), sa terapijom, dijetetskim oznakama i jednokratnim terminima;
+- globalne šablone zadataka i jelovnik za cijeli period;
+- historiju: odrađene i preskočene zadatke, vitalne parametre (sa odstupanjima), napomene, izbore obroka i primopredaje smjena;
+- zadatke za narednih 30 dana.
+
+Radnici (PIN radi samo ako je `CAREHOME_PIN_PEPPER` postavljen):
+
+| Radnik | Uloga | PIN | Zone |
+|---|---|---|---|
+| Amra Selimović | Njegovatelj | 2580 | Zgrada A |
+| Nermin Hadžić | Njegovatelj | 3691 | Zgrada A i B |
+| Senad Mujić | Njegovatelj | 4702 | Zgrada A i B |
+| Lejla Đurić | Njegovatelj | 6914 | Zgrada B |
+| Jasmina Kurtović | Kuhinja | 5813 | – |
+| Demo Administrator | Administrator | 7924 | sve |
+
+Demo radnici nemaju lozinku za CMS. Ako neki od ovih PIN-ova već koristi postojeći korisnik, demo radnik se kreira bez PIN-a, a task to ispiše.
+
+Zadaci iza uobičajenog horizonta od 7 dana ostaju kakvi su generisani. Dnevni cron ih ažurira tek kad uđu u prozor od 7 dana.
+
 ## Uloge i prava
 
 `db:build` kreira tri grupe sa pravima. Uloga se postavlja na članu (Sigurnost → član → tab „Dom za njegu“), a grupa se sinhronizuje automatski.
